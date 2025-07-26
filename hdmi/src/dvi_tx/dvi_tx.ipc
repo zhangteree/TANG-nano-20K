@@ -8,9 +8,7 @@ version=1.0
 
 [Config]
 DISABLE_IO_INSERTION=true
-ELVDS=true
+ELVDS=false
 LANG=0
-RX_CLOCK_IN_FREQUENCY=40
 Synthesis_tool=GowinSynthesis
-TLVDS=false
-USING_EXTERNAL_CLOCK=true
+TLVDS=true

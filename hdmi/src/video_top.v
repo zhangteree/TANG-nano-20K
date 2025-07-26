@@ -24,7 +24,10 @@
 module video_top
 (
     input             I_clk           , //27Mhz
-    input             I_rst_n         ,
+    input             I_rst           ,
+    input             I_key           ,
+    output     [4:0]  O_led           ,
+    output            running         ,
     output            O_tmds_clk_p    ,
     output            O_tmds_clk_n    ,
     output     [2:0]  O_tmds_data_p   ,//{r,g,b}
@@ -32,8 +35,37 @@ module video_top
 );
 
 //==================================================
+assign      I_rst_n = ~I_rst;
+
+reg  [1:0]  KEY_sync;
+
 reg  [31:0] run_cnt;
 wire        running;
+wire        I_rst_n;
+
+//KEY Switch MODE
+reg [1:0] KEY_sync;
+always @(posedge pix_clk or negedge hdmi4_rst_n) begin
+    if (!hdmi4_rst_n)    
+        KEY_sync <= 2'b00;
+    else                 
+        KEY_sync <= {KEY_sync[0], I_key};
+end
+
+
+wire KEY_pressed =  KEY_sync[0] & ~KEY_sync[1];
+
+reg [2:0]   mode_reg;
+
+always @(posedge pix_clk or negedge hdmi4_rst_n) begin
+    if (!hdmi4_rst_n)      
+        mode_reg <= 3'd0;
+    else if (KEY_pressed)   
+        mode_reg <= mode_reg + 3'd1;
+    else                   
+        mode_reg <= mode_reg;
+end
+
 
 //--------------------------
 wire        tp0_vs_in  ;
@@ -75,7 +107,7 @@ testpattern testpattern_inst
 (
     .I_pxl_clk   (pix_clk            ),//pixel clock
     .I_rst_n     (hdmi4_rst_n        ),//low active 
-    .I_mode      ({1'b0,cnt_vs[9:8]} ),//data select
+    .I_mode      (mode_reg           ),//data select
     .I_single_r  (8'd0               ),
     .I_single_g  (8'd255             ),
     .I_single_b  (8'd0               ),                  //800x600    //1024x768   //1280x720    
@@ -106,7 +138,7 @@ always@(posedge pix_clk or negedge hdmi4_rst_n)
 begin
     if(!hdmi4_rst_n)
         cnt_vs<=0;
-    else if(vs_r && !tp0_vs_in) //vs24 falling edge
+    else if(vs_r && !tp0_vs_in) //vKEY4 falling edge
         cnt_vs<=cnt_vs+1'b1;
 end 
 
@@ -146,6 +178,12 @@ DVI_TX_Top DVI_TX_Top_inst
     .O_tmds_data_n (O_tmds_data_n )
 );
 
-
+key_led_ctrl key_led_ctrl_inst
+(
+    .I_rst_n       (hdmi4_rst_n   ),
+    .I_clk         (pix_clk       ), 
+    .I_key         (I_key         ),
+    .O_led         (O_led         )
+);
 
 endmodule
