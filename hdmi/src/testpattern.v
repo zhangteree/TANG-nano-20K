@@ -6,7 +6,10 @@
 //						I_mode[2:0] = "000" : color bar     
 //						I_mode[2:0] = "001" : net grid     
 //						I_mode[2:0] = "010" : gray         
-//						I_mode[2:0] = "011" : single color
+//						I_mode[2:0] = "011" : single green
+//                      I_mode[2:0] = "100" : single blue
+//                      I_mode[2:0] = "101" : single red
+//                
 // ---------------------------------------------------------------------
 // Release history
 // VERSION |   Date      | AUTHOR  |    DESCRIPTION
@@ -30,11 +33,11 @@ module testpattern
     input      [11:0]  I_v_sync    ,//ver sync time  
     input      [11:0]  I_v_bporch  ,//ver back porch  
     input      [11:0]  I_v_res     ,//ver resolution 
-    input              I_hs_pol    ,//HS polarity , 0:�����ԣ�1��������
-    input              I_vs_pol    ,//VS polarity , 0:�����ԣ�1��������
+    input              I_hs_pol    ,//HS polarity 
+    input              I_vs_pol    ,//VS polarity 
     output             O_de        ,   
-    output reg         O_hs        ,//������
-    output reg         O_vs        ,//������
+    output reg         O_hs        ,
+    output reg         O_vs        ,
     output     [7:0]   O_data_r    ,    
     output     [7:0]   O_data_g    ,
     output     [7:0]   O_data_b    
@@ -75,21 +78,21 @@ reg  [11:0]   De_hcnt_d1  ;
 reg  [11:0]   De_hcnt_d2  ;
 
 //-------------------------
-//Color bar //8ɫ����
+//Color bar 
 reg  [11:0]   Color_trig_num; 
 reg           Color_trig    ;
 reg  [3:0]    Color_cnt     ;
 reg  [23:0]   Color_bar     ;
 
 //----------------------------
-//Net grid //32����
+//Net grid 
 reg           Net_h_trig;
 reg           Net_v_trig;
 wire [1:0]    Net_pos   ;
 reg  [23:0]   Net_grid  ;
 
 //----------------------------
-//Gray  //�ڰ׻ҽ�
+//Gray  
 reg  [23:0]   Gray;
 reg  [23:0]   Gray_d1;
 
@@ -153,7 +156,7 @@ begin
 		end
 end
 
-assign O_de = Pout_de_dn[4];//ע�������ݶ���
+assign O_de = Pout_de_dn[4];
 
 always@(posedge I_pxl_clk or negedge I_rst_n)
 begin
@@ -207,7 +210,7 @@ begin
 	if(!I_rst_n)
 		Color_trig_num <= 12'd0;
 	else if (Pout_de_dn[1] == 1'b0)
-		Color_trig_num <= I_h_res[11:3]; //8ɫ��������
+		Color_trig_num <= I_h_res[11:3]; 
 	else if ((Color_trig == 1'b1) && (Pout_de_dn[1] == 1'b1))
 		Color_trig_num <= Color_trig_num + I_h_res[11:3];
 	else
@@ -325,7 +328,11 @@ assign Single_color = {I_single_b,I_single_g,I_single_r};
 assign Data_sel = (I_mode[2:0] == 3'b000) ? Color_bar		: 
                   (I_mode[2:0] == 3'b001) ? Net_grid 		: 
                   (I_mode[2:0] == 3'b010) ? Gray_d1    		: 
-				  (I_mode[2:0] == 3'b011) ? Single_color	: BLUE;
+				  (I_mode[2:0] == 3'b011) ? {4{BLUE}}       :
+                  (I_mode[2:0] == 3'b100) ? {4{GREEN}}   	: 
+                  (I_mode[2:0] == 3'b101) ? {4{RED}}  	    : 
+                  (I_mode[2:0] == 3'b110) ? {4{WHITE}}  	: 
+                                            {4{BLACK}} 	    ;
 
 //---------------------------------------------------
 always @(posedge I_pxl_clk or negedge I_rst_n)
